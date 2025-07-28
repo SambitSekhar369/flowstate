@@ -1,22 +1,27 @@
-// This line is important. It tells Next.js that this component will have user interaction in the browser.
 'use client';
 
 import { useState } from 'react';
+import { createClient } from '@/lib/supabaseClient'; // We are now importing our client
 
 export default function QuickCapture() {
-  // We use 'state' to keep track of what the user is typing.
   const [taskName, setTaskName] = useState('');
+  const supabase = createClient(); // Initialize the Supabase client
 
-  const handleSubmit = (e: React.FormEvent) => {
-    // This prevents the whole page from reloading when the button is clicked.
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (taskName.trim() === '') return; // Don't add empty tasks
+    if (taskName.trim() === '') return;
 
-    // For now, we'll just log it to the console. Next, we'll save it to the database.
-    console.log('New Task Added:', taskName);
-    
-    // Clear the input field after adding the task.
-    setTaskName('');
+    // This is the new part! We're talking to Supabase.
+    const { error } = await supabase.from('tasks').insert([
+      { name: taskName, is_complete: false }, // We insert the task name here
+    ]);
+
+    if (error) {
+      console.error('Error inserting task:', error.message);
+    } else {
+      console.log('Task added successfully!');
+      setTaskName(''); // Clear the input field on success
+    }
   };
 
   return (
