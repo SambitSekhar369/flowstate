@@ -3,6 +3,12 @@
 @tailwind utilities;
 
 body {
-  background-color: #f7f7f7; /* A very light, soft gray */
-  color: #1a1a1a; /* A dark, but not pure black, for text */
+  background-color: #121212; /* Deep dark background */
+  color: #EAEAEA;          /* Off-white text for readability */
+}
+
+/* We can add styles for our glowing accent text later */
+.text-accent-glow {
+  color: #00A9FF;
+  text-shadow: 0 0 8px rgba(0, 169, 255, 0.5);
 }
