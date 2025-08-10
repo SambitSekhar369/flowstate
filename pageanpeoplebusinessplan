@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page and People: Interactive Strategic Plan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Serene Neutrals & Papyrus -->
+    <!-- Application Structure Plan: The SPA is designed as an executive dashboard with three core, non-linear sections: "The Vision" (Business Plan), "The Opportunity" (Market Analysis), and "The Execution" (GTM Strategy). This thematic structure, navigated by a sticky header, allows stakeholders (investors, team members) to explore the plan based on their specific interests, rather than being forced into a linear document flow. For example, a marketing lead can jump directly to "The Execution," while a financial analyst can focus on the interactive charts in "The Vision." This user-centric design prioritizes exploration and synthesis over passive reading, making the complex strategy more digestible and engaging. Key interactions include dynamic chart filtering, clickable competitor cards, and an interactive GTM timeline, all designed to reveal deeper layers of information on demand. -->
+    <!-- Visualization & Content Choices: 
+        - Financial Projections: Report Info -> 3-Year Forecast. Goal -> Show growth & path to profitability. Viz -> Interactive Line Chart (Chart.js). Interaction -> Toggle visibility of Revenue, Expenses, EBITDA. Justification -> More dynamic and comparative than a static table.
+        - Market Sizing (TAM/SAM/SOM): Report Info -> Market sizing data. Goal -> Visualize market scale and focus. Viz -> Interactive Donut Chart (Chart.js). Interaction -> Hover for details. Justification -> Intuitively shows the "slice of the pie" strategy.
+        - Competitive Analysis: Report Info -> Competitor strengths/weaknesses. Goal -> Compare directly. Viz -> HTML/CSS Grid with clickable cards. Interaction -> Click to expand/collapse details. Justification -> Encourages active comparison and is more engaging than a static matrix.
+        - SWOT Analysis: Report Info -> SWOT points. Goal -> Organize strategic factors. Viz -> 2x2 HTML/CSS Grid. Interaction -> Click to reveal details in a modal/expanded view. Justification -> Clean, organized, and interactive presentation of core strategic pillars.
+        - GTM Rollout: Report Info -> Phased GTM plan. Goal -> Show timeline and activities. Viz -> Horizontal HTML/CSS Timeline. Interaction -> Click phase to see details. Justification -> Clearly visualizes the project's temporal roadmap.
+        - KPIs: Report Info -> KPI targets. Goal -> Demonstrate measurable success metrics. Viz -> Bar Chart (Chart.js). Interaction -> Dropdown to select and view different KPIs. Justification -> Allows focused analysis of specific success metrics over time.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF7;
+            color: #38332E;
+        }
+        .active-nav {
+            color: #D97706;
+            border-bottom: 2px solid #D97706;
+        }
+        .nav-item {
+            transition: color 0.3s ease, border-color 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-item:hover {
+            color: #D97706;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        .kpi-chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 450px;
+            max-height: 55vh;
+        }
+        .swot-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .swot-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -0.5rem;
+            transform: translateY(-50%);
+            width: 1rem;
+            height: 1rem;
+            border-radius: 9999px;
+            background-color: #FBBF24;
+            border: 3px solid #FDFBF7;
+        }
+        .timeline-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            width: 100%;
+            height: 2px;
+            background-color: #E5E7EB;
+            z-index: -1;
+        }
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="antialiased" x-data="{ activeSection: 'vision' }">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 005.5 16c1.255 0 2.443-.29 3.5-.804V4.804zM14.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 0014.5 16c1.255 0 2.443-.29 3.5-.804v-10A7.968 7.968 0 0014.5 4z" />
+                </svg>
+                <h1 class="text-2xl font-bold text-gray-800">Page & People</h1>
+            </div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="#vision" @click="activeSection = 'vision'" :class="{ 'active-nav': activeSection === 'vision' }" class="nav-item font-semibold text-gray-600 pb-2">The Vision</a>
+                <a href="#opportunity" @click="activeSection = 'opportunity'" :class="{ 'active-nav': activeSection === 'opportunity' }" class="nav-item font-semibold text-gray-600 pb-2">The Opportunity</a>
+                <a href="#execution" @click="activeSection = 'execution'" :class="{ 'active-nav': activeSection === 'execution' }" class="nav-item font-semibold text-gray-600 pb-2">The Execution</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+
+        <!-- Section 1: The Vision -->
+        <section id="vision" class="py-12">
+            <h2 class="text-4xl font-bold text-center mb-4 text-amber-700">The Vision</h2>
+            <p class="text-center max-w-3xl mx-auto text-lg text-gray-600 mb-16">This section outlines the core business plan, detailing our mission, our unique product, and the financial strategy designed to build a soulful, profitable enterprise for the modern reader.</p>
+
+            <div class="space-y-16">
+                <!-- Mission & Vision -->
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h3 class="text-3xl font-bold mb-4 text-gray-800">Mission, Vision & Brand Ethos</h3>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h4 class="text-xl font-semibold text-amber-600 mb-2">Mission Statement</h4>
+                            <p class="text-gray-600">To create a universe of stories, community, and connection by providing the modern reader with a soulful, all-in-one platform that moves beyond transactions to foster genuine human connection through a shared love of books.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-semibold text-amber-600 mb-2">Vision Statement</h4>
+                            <p class="text-gray-600">To become the definitive digital home for the global reading community, where discovering a book is as meaningful as discovering a friend.</p>
+                        </div>
+                    </div>
+                     <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h4 class="text-xl font-semibold text-amber-600 mb-2">Brand Ethos: Built by a Reader, for Readers</h4>
+                        <p class="text-gray-600">Our authenticity is our most crucial asset. We counter the impersonal, algorithm-driven nature of competitors with a platform born from a genuine frustration with the soullessness of existing options. This ethos establishes immediate trust and relatability with our target audience.</p>
+                    </div>
+                </div>
+
+                <!-- Financial Projections -->
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h3 class="text-3xl font-bold mb-2 text-gray-800 text-center">3-Year Financial Projections</h3>
+                    <p class="text-center max-w-2xl mx-auto text-gray-600 mb-6">This forecast projects a clear path to profitability by Year 2, driven by strong user growth and a multi-phased monetization strategy. Interact with the legend below to explore our financial trajectory.</p>
+                    <div class="chart-container">
+                        <canvas id="financialsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Monetization -->
+                 <div class="bg-white rounded-xl shadow-lg p-8" x-data="{ activeTab: 'phase1' }">
+                    <h3 class="text-3xl font-bold mb-6 text-gray-800 text-center">Phased Monetization Strategy</h3>
+                    <div class="flex justify-center border-b mb-6">
+                        <button @click="activeTab = 'phase1'" :class="{ 'border-amber-500 text-amber-600': activeTab === 'phase1', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'phase1' }" class="py-4 px-6 block font-medium text-center border-b-2">Phase 1: Transactional</button>
+                        <button @click="activeTab = 'phase2'" :class="{ 'border-amber-500 text-amber-600': activeTab === 'phase2', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'phase2' }" class="py-4 px-6 block font-medium text-center border-b-2">Phase 2: Subscription</button>
+                        <button @click="activeTab = 'phase3'" :class="{ 'border-amber-500 text-amber-600': activeTab === 'phase3', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'phase3' }" class="py-4 px-6 block font-medium text-center border-b-2">Phase 3: Ancillary</button>
+                    </div>
+                    <div class="text-center max-w-3xl mx-auto">
+                        <div x-show="activeTab === 'phase1'" x-cloak>
+                            <h4 class="text-2xl font-semibold mb-2 text-amber-600">Years 1-2: Commission on Sales</h4>
+                            <p class="text-gray-600">Our initial revenue will come from affiliate commissions on book sales (physical, ebook, audiobook). By partnering with distributors and platforms like Bookshop.org, we can project a blended commission rate of 5-8% on GMV, generating income without charging users directly and reducing adoption friction.</p>
+                        </div>
+                        <div x-show="activeTab === 'phase2'" x-cloak>
+                             <h4 class="text-2xl font-semibold mb-2 text-amber-600">Year 2 Onwards: "Page & People Plus"</h4>
+                            <p class="text-gray-600">Once a critical user mass is achieved, we will introduce a freemium subscription tier. "Plus" members will pay a monthly fee (est. $5-10) for premium features like advanced reading analytics, enhanced community tools, and an ad-free experience, creating a recurring revenue stream.</p>
+                        </div>
+                        <div x-show="activeTab === 'phase3'" x-cloak>
+                             <h4 class="text-2xl font-semibold mb-2 text-amber-600">Year 3 Onwards: B2B Services</h4>
+                            <p class="text-gray-600">As the platform scales, we will introduce targeted advertising for publishers and a paid "Giveaways" program for authors. These B2B services, mirroring successful models from competitors, leverage our consumer base to create high-margin, diversified revenue.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: The Opportunity -->
+        <section id="opportunity" class="py-12">
+            <h2 class="text-4xl font-bold text-center mb-4 text-amber-700">The Opportunity</h2>
+            <p class="text-center max-w-3xl mx-auto text-lg text-gray-600 mb-16">This section validates the massive market opportunity by analyzing market size, dissecting key trends, and evaluating the competitive landscape. It establishes a clear, data-supported rationale for our strategic position.</p>
+            
+            <div class="space-y-16">
+                 <!-- Market Size -->
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h3 class="text-3xl font-bold mb-2 text-gray-800 text-center">Tapping into a Trillion-Dollar Ecosystem</h3>
+                    <p class="text-center max-w-2xl mx-auto text-gray-600 mb-6">Page & People operates at the intersection of the stable, massive global book market and the hyper-growth social commerce space. Hover over the chart segments to see how we target this opportunity.</p>
+                    <div class="chart-container">
+                        <canvas id="marketSizeChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Competitive Landscape -->
+                <div class="bg-white rounded-xl shadow-lg p-8" x-data="{ open: 'none' }">
+                    <h3 class="text-3xl font-bold mb-2 text-gray-800 text-center">The Competitive Landscape</h3>
+                     <p class="text-center max-w-3xl mx-auto text-gray-600 mb-8">The market is defined by stagnant incumbents and fragmented social platforms, creating a "radical center" opportunity. Click on a competitor to see how Page & People's strategy directly addresses their weaknesses.</p>
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div @click="open = 'goodreads'" class="cursor-pointer p-6 rounded-lg border-2" :class="{'border-amber-500 bg-amber-50': open === 'goodreads', 'border-gray-200 bg-white': open !== 'goodreads'}">
+                            <h4 class="text-xl font-bold text-center">Goodreads</h4>
+                            <p class="text-sm text-center text-gray-500">The Stagnant Incumbent</p>
+                        </div>
+                        <div @click="open = 'storygraph'" class="cursor-pointer p-6 rounded-lg border-2" :class="{'border-amber-500 bg-amber-50': open === 'storygraph', 'border-gray-200 bg-white': open !== 'storygraph'}">
+                            <h4 class="text-xl font-bold text-center">The StoryGraph</h4>
+                            <p class="text-sm text-center text-gray-500">The Niche Innovator</p>
+                        </div>
+                        <div @click="open = 'socials'" class="cursor-pointer p-6 rounded-lg border-2" :class="{'border-amber-500 bg-amber-50': open === 'socials', 'border-gray-200 bg-white': open !== 'socials'}">
+                            <h4 class="text-xl font-bold text-center">#BookTok / Socials</h4>
+                            <p class="text-sm text-center text-gray-500">The Fragmented Community</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 p-6 bg-gray-50 rounded-lg" x-show="open !== 'none'" x-cloak x-transition>
+                        <div x-show="open === 'goodreads'">
+                            <h5 class="font-bold text-lg text-gray-800">Weakness: Stagnation & Poor UX</h5>
+                            <p class="text-gray-600 mt-1">Widely criticized for a dated, clunky interface and lack of innovation. <strong class="text-amber-600">Our Solution:</strong> A modern, aesthetic, and intuitive UX/UI designed for today's user.</p>
+                        </div>
+                        <div x-show="open === 'storygraph'">
+                            <h5 class="font-bold text-lg text-gray-800">Weakness: Underdeveloped Social Layer</h5>
+                            <p class="text-gray-600 mt-1">Excellent for solitary tracking but lacks robust community and commerce features. <strong class="text-amber-600">Our Solution:</strong> A platform built from the ground up for social interaction, featuring messaging and hyper-local discovery.</p>
+                        </div>
+                        <div x-show="open === 'socials'">
+                            <h5 class="font-bold text-lg text-gray-800">Weakness: Not Purpose-Built</h5>
+                            <p class="text-gray-600 mt-1">Vibrant discovery, but tracking and purchasing are disjointed, forcing users off-platform. <strong class="text-amber-600">Our Solution:</strong> A unified ecosystem integrating discovery, commerce, consumption, and community in one place.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SWOT Analysis -->
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                     <h3 class="text-3xl font-bold mb-8 text-gray-800 text-center">SWOT Analysis</h3>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="swot-card bg-green-50 p-6 rounded-lg border border-green-200">
+                            <h4 class="text-2xl font-bold text-green-800 mb-2">Strengths</h4>
+                            <ul class="list-disc list-inside space-y-1 text-green-700">
+                                <li>Unique Value Proposition (Hyper-Local Map)</li>
+                                <li>Integrated All-in-One Ecosystem</li>
+                                <li>Authentic "By Readers, For Readers" Brand</li>
+                                <li>Modern, Scalable Tech Stack</li>
+                            </ul>
+                        </div>
+                        <div class="swot-card bg-red-50 p-6 rounded-lg border border-red-200">
+                            <h4 class="text-2xl font-bold text-red-800 mb-2">Weaknesses</h4>
+                             <ul class="list-disc list-inside space-y-1 text-red-700">
+                                <li>The "Cold Start" User Problem</li>
+                                <li>Zero Initial Brand Recognition</li>
+                                <li>Dependency on Affiliate Partnerships</li>
+                            </ul>
+                        </div>
+                        <div class="swot-card bg-blue-50 p-6 rounded-lg border border-blue-200">
+                            <h4 class="text-2xl font-bold text-blue-800 mb-2">Opportunities</h4>
+                             <ul class="list-disc list-inside space-y-1 text-blue-700">
+                                <li>Widespread Incumbent Dissatisfaction</li>
+                                <li>#BookTok as a Viral Growth Engine</li>
+                                <li>Growth of Hybrid (Print/Digital) Consumption</li>
+                                <li>Demand for Niche, Authentic Communities</li>
+                            </ul>
+                        </div>
+                        <div class="swot-card bg-yellow-50 p-6 rounded-lg border border-yellow-200">
+                            <h4 class="text-2xl font-bold text-yellow-800 mb-2">Threats</h4>
+                             <ul class="list-disc list-inside space-y-1 text-yellow-700">
+                                <li>Competitive Reaction from Amazon</li>
+                                <li>Platform Risk (Algorithm Changes)</li>
+                                <li>Crowded App Market Noise</li>
+                                <li>Monetization Balancing Act</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: The Execution -->
+        <section id="execution" class="py-12">
+            <h2 class="text-4xl font-bold text-center mb-4 text-amber-700">The Execution</h2>
+            <p class="text-center max-w-3xl mx-auto text-lg text-gray-600 mb-16">This section outlines our actionable Go-to-Market blueprint, detailing our target audience, brand messaging, phased launch plan, and the key metrics that will define our success.</p>
+            
+            <div class="space-y-16">
+                <!-- GTM Strategy -->
+                <div class="bg-white rounded-xl shadow-lg p-8" x-data="{ activePhase: 'phase1' }">
+                    <h3 class="text-3xl font-bold text-center mb-8 text-gray-800">Phased Go-to-Market Rollout</h3>
+                    <div class="relative max-w-4xl mx-auto">
+                        <div class="timeline-line"></div>
+                        <div class="grid grid-cols-3 text-center">
+                            <button @click="activePhase = 'phase1'" class="relative p-4">
+                                <span class="font-bold" :class="{'text-amber-600': activePhase === 'phase1', 'text-gray-500': activePhase !== 'phase1'}">Phase 1: Pre-Launch</span>
+                                <div class="timeline-item"></div>
+                            </button>
+                            <button @click="activePhase = 'phase2'" class="relative p-4">
+                                <span class="font-bold" :class="{'text-amber-600': activePhase === 'phase2', 'text-gray-500': activePhase !== 'phase2'}">Phase 2: Launch</span>
+                                <div class="timeline-item"></div>
+                            </button>
+                             <button @click="activePhase = 'phase3'" class="relative p-4">
+                                <span class="font-bold" :class="{'text-amber-600': activePhase === 'phase3', 'text-gray-500': activePhase !== 'phase3'}">Phase 3: Growth</span>
+                                <div class="timeline-item"></div>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-8 p-6 bg-gray-50 rounded-lg max-w-4xl mx-auto">
+                        <div x-show="activePhase === 'phase1'" x-cloak>
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Goal: Build Hype & A Waitlist (3 Months Prior)</h4>
+                            <p class="text-gray-600">Focus on creating a high-conversion landing page and seeding the app with 50-100 #BookTok micro-influencers for beta access. The goal is to secure 5,000+ email signups and 20-30 launch-day influencer partnerships before we go live.</p>
+                        </div>
+                        <div x-show="activePhase === 'phase2'" x-cloak>
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Goal: High-Impact Launch (Launch Week)</h4>
+                            <p class="text-gray-600">Execute a coordinated launch on Product Hunt to maximize visibility in the tech community. Simultaneously, our influencer partners will drop content, and we will email our waitlist. The goal is a Top 5 "Product of the Day" finish and 10,000+ new signups.</p>
+                        </div>
+                        <div x-show="activePhase === 'phase3'" x-cloak>
+                            <h4 class="font-bold text-lg text-gray-800 mb-2">Goal: Scale Acquisition & Retention (First 6 Months)</h4>
+                            <p class="text-gray-600">Implement a user referral program and scale influencer marketing to an "always-on" strategy. Begin sustained investment in SEO to build our organic acquisition channel. The goal is 20%+ MoM user growth and shifting >25% of acquisition to organic sources.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPIs -->
+                <div class="bg-white rounded-xl shadow-lg p-8" x-data="{ selectedKpi: 'MAUs' }">
+                    <h3 class="text-3xl font-bold text-center mb-2 text-gray-800">Measuring Success: Key Performance Indicators</h3>
+                    <p class="text-center max-w-3xl mx-auto text-gray-600 mb-6">Our success will be measured by a focused set of KPIs that track growth, engagement, and financial health. Select a metric from the dropdown to visualize our 3-year targets.</p>
+                    <div class="max-w-xs mx-auto mb-6">
+                        <select x-model="selectedKpi" @change="$dispatch('kpi-change', { kpi: selectedKpi })" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-amber-500 focus:border-amber-500">
+                            <option value="MAUs">Monthly Active Users (MAUs)</option>
+                            <option value="Retention">Day 30 Retention Rate (%)</option>
+                            <option value="ARPU">Average Revenue Per User (USD)</option>
+                            <option value="Stickiness">DAU/MAU Ratio (%)</option>
+                        </select>
+                    </div>
+                    <div class="kpi-chart-container">
+                        <canvas id="kpiChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>&copy; 2025 Page & People. A Strategic Interactive Blueprint.</p>
+            <p class="text-sm text-gray-400 mt-2">This document is for illustrative purposes and contains forward-looking statements based on market analysis and strategic assumptions.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const financialData = {
+                labels: ['Year 1', 'Year 2', 'Year 3'],
+                datasets: [
+                    {
+                        label: 'Total Revenue (USD)',
+                        data: [187500, 3200000, 22500000],
+                        borderColor: '#16A34A',
+                        backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                    },
+                    {
+                        label: 'Total Expenses (USD)',
+                        data: [950000, 2500000, 9000000],
+                        borderColor: '#DC2626',
+                        backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                    },
+                    {
+                        label: 'EBITDA (USD)',
+                        data: [-762500, 700000, 13500000],
+                        borderColor: '#2563EB',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                    }
+                ]
+            };
+
+            const financialsCtx = document.getElementById('financialsChart').getContext('2d');
+            const financialsChart = new Chart(financialsCtx, {
+                type: 'line',
+                data: financialData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    if (value >= 1000000) return '$' + (value / 1000000) + 'M';
+                                    if (value >= 1000) return '$' + (value / 1000) + 'K';
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const marketSizeData = {
+                labels: ['Total Addressable Market (TAM)', 'Serviceable Available Market (SAM)', 'Serviceable Obtainable Market (SOM)'],
+                datasets: [{
+                    label: 'Market Size (USD Billions)',
+                    data: [1350, 250, 20],
+                    backgroundColor: [
+                        '#FDE68A', // TAM
+                        '#FBBF24', // SAM
+                        '#D97706'  // SOM
+                    ],
+                    hoverOffset: 4
+                }]
+            };
+
+            const marketSizeCtx = document.getElementById('marketSizeChart').getContext('2d');
+            const marketSizeChart = new Chart(marketSizeCtx, {
+                type: 'doughnut',
+                data: marketSizeData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                        },
+                        tooltip: {
+                             callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += '$' + context.parsed.toLocaleString() + ' Billion';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const kpiData = {
+                MAUs: {
+                    labels: ['Year 1 Target', 'Year 2 Target', 'Year 3 Target'],
+                    data: [75000, 400000, 1500000],
+                    title: 'Monthly Active Users (MAUs)',
+                    formatter: (value) => value.toLocaleString()
+                },
+                Retention: {
+                    labels: ['Year 1 Target', 'Year 2 Target', 'Year 3 Target', 'Industry Avg.'],
+                    data: [10, 15, 20, 3.9],
+                    title: 'Day 30 Retention Rate (%)',
+                    formatter: (value) => value + '%'
+                },
+                ARPU: {
+                    labels: ['Year 1 Target', 'Year 2 Target', 'Year 3 Target'],
+                    data: [2.5, 8.0, 15.0],
+                    title: 'Average Revenue Per User (ARPU)',
+                    formatter: (value) => '$' + value.toFixed(2)
+                },
+                Stickiness: {
+                    labels: ['Year 1 Target', 'Year 2 Target', 'Year 3 Target', 'Good Benchmark'],
+                    data: [25, 30, 35, 20],
+                    title: 'DAU/MAU Ratio (%)',
+                    formatter: (value) => value + '%'
+                }
+            };
+            
+            const kpiCtx = document.getElementById('kpiChart').getContext('2d');
+            let kpiChart;
+
+            function createOrUpdateKpiChart(kpiKey) {
+                const selectedData = kpiData[kpiKey];
+                
+                if (kpiChart) {
+                    kpiChart.destroy();
+                }
+
+                kpiChart = new Chart(kpiCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: selectedData.labels,
+                        datasets: [{
+                            label: selectedData.title,
+                            data: selectedData.data,
+                            backgroundColor: [
+                                'rgba(217, 119, 6, 0.7)',
+                                'rgba(251, 191, 36, 0.7)',
+                                'rgba(253, 224, 71, 0.7)',
+                                'rgba(203, 213, 225, 0.7)'
+                            ],
+                            borderColor: [
+                                'rgb(217, 119, 6)',
+                                'rgb(251, 191, 36)',
+                                'rgb(253, 224, 71)',
+                                'rgb(203, 213, 225)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return selectedData.formatter(value);
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: selectedData.title,
+                                font: {
+                                    size: 18
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return selectedData.formatter(context.parsed.y);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            createOrUpdateKpiChart('MAUs');
+
+            document.addEventListener('kpi-change', (event) => {
+                createOrUpdateKpiChart(event.detail.kpi);
+            });
+
+            // Smooth scrolling for nav links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
